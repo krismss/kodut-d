@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <title>Kaart</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.css" />
+    <style>
+        body { padding: 0; margin: 0; }
+        html, body { height: 100%; width: 100%; }
+        #kaardikiht { width: 100%; height: 100%; }
+    </style>
+    <script>
+        let kaart;
+        let marker2;
+
+        // andmed
+        let muuseumid = {
+            "Eesti Rahva Muuseum": L.latLng(58.370358, 26.725132), // Tartu
+            "Tartu Ülikooli Muuseum": L.latLng(58.378435, 26.726226), // Tartu
+            "Jääaja Keskus": L.latLng(58.375054, 26.710771), // Rapla
+            "Vana-Vigala Muuseum": L.latLng(59.155135, 24.542903), // Läänemere
+            "Kuressaare Lossimuuseum": L.latLng(58.245916, 22.486080), // Saaremaa
+            "Narva Muuseum": L.latLng(59.377878, 28.191287), // Narva
+            "Eesti Meremuuseum": L.latLng(59.436892, 24.711375), // Tallinn
+            "Eesti Loodusmuuseum": L.latLng(59.437083, 24.740134), // Tallinn
+            "Pärnu Muuseum": L.latLng(58.372394, 24.496707), // Pärnu
+            "Pikk Maja": L.latLng(59.00419648954064, 22.746347242329914), // Hiiumaa
+            "Kumu Kunstimuuseum": L.latLng(59.433689, 24.738162), // Tallinn
+            "NUKU Teater ja Muuseum": L.latLng(59.437500, 24.745233) // Tallinn
+        };
+
+        function algus() {
+            
+            kaart = L.map('kaardikiht').setView([58.595272, 25.013227], 7);
+            new L.TileLayer('https://tiles.maaamet.ee/tm/tms/1.0.0/hybriid@GMC/{z}/{x}/{y}.png&ASUTUS=TLU&ERIALA=DIGIHUMANITAARIA', {
+                attribution: "Map: <a href='http://www.maaamet.ee/'>Maa-amet</a>",
+                tms: true,
+            }).addTo(kaart);
+
+            // nihutav punkt
+            const nihutavIkoon = L.divIcon({
+                className: 'nihutav-marker',
+                html: '<div style="background-color: red; border-radius: 50%; width: 20px; height: 20px;"></div>', // punane ring
+                iconSize: [20, 20],
+                iconAnchor: [10, 10],
+            });
+
+            marker2 = L.marker([59.250688, 25.738778], { icon: nihutavIkoon, draggable: true }).addTo(kaart);
+            marker2.on("move", liigub);
+            
+            // lisan muuseumid kaardile, nende pointerid, kauguse
+            for (let muuseum in muuseumid) {
+                L.marker(muuseumid[muuseum]).addTo(kaart)
+                    .bindPopup(muuseum)
+                    .on('click', () => { 
+                        let kaugus = muuseumid[muuseum].distanceTo(marker2.getLatLng()) / 1000; // meetritest kilomeetriteks
+                        alert(`Kaugus ${muuseum} ja nihutatava punkti vahel: ${kaugus.toFixed(2)} km`);
+                    });
+            }
+        }
+// kauguse arvutamine
+        function liigub() {
+            let vastused = [];
+            for (let muuseum in muuseumid) {
+                let kaugus = muuseumid[muuseum].distanceTo(marker2.getLatLng()) / 1000; // meetrites kilomeetriteks
+                vastused.push(`${muuseum}: ${kaugus.toFixed(2)} km`);
+            }
+            document.getElementById('vastus').innerText = vastused.join('\n');
+        }
+    </script>
+</head>  
+<body onload="algus()">
+    <div id="kaardikiht"></div>
+    <div id="vastus" style="background-color: rgba(255, 255, 255, 0.5); padding: 10px; position: absolute; top: 10px; left: 10px;"></div> 
+</body>
+</html>
+
