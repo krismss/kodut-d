@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.5.1/leaflet.css" />
+  <script>
+    let kaart, abikiht, kohad = {};
+
+    function lugemine1() {
+      fetch("https://www.tlu.ee/~jaagup/andmed/muu/kohad.txt")
+        .then(andmed => andmed.text())
+        .then(salvestaKohad);
+      
+      // Google Sheets CSV link
+      fetch("https://docs.google.com/spreadsheets/d/13JzOxHIyckhj8iPa2aDk_WhU2Vnmrr2bPQeFSM28Z4g/export?format=csv")
+        .then(response => response.text())
+        .then(salvestaMuuseumid)
+        .catch(error => console.error('CSV laadimise viga:', error));
+    }
+
+    function salvestaMuuseumid(data) {
+      const rows = data.split("\n").slice(1); // Eemalda päis
+      for (let row of rows) {
+        const columns = row.split(","); // Kui CSV komadega eraldatud
+        if (columns.length === 3) {
+          const nimi = columns[0].trim(); // Kirjeldus
+          const laius = parseFloat(columns[1].trim()); // Laiuskraad
+          const pikkus = parseFloat(columns[2].trim()); // Pikkuskraad
+          if (!isNaN(laius) && !isNaN(pikkus)) {
+            // Lisa ainult muuseumid
+            kohad[nimi] = { coords: [laius, pikkus], type: "museum" }; // Lisa muuseumide koordinaadid
+          }
+        }
+      }
+      console.log("Muuseumid:", kohad);
+      lisageMuuseumidKaardile(); // lisan muuseumid kaardile
+    }
+
+    function lisageMuuseumidKaardile() {
+      abikiht.clearLayers(); 
+      for (let nimi in kohad) {
+        let koht = kohad[nimi];
+        if (koht.type === "museum") { // 
+          L.marker(koht.coords, { icon: valiIkoon(koht) })
+            .addTo(abikiht)
+            .bindPopup(nimi);
+        }
+      }
+    }
+
+    function salvestaKohad(t) {
+      vastus1.innerText = t;
+      // Pärnu ja Tartu koordinaadid 
+      kohad["Pärnu"] = { coords: [58.383, 24.496], type: "city" };
+      kohad["Tartu"] = { coords: [58.378, 26.725], type: "city" };
+
+      if (t.startsWith("koht")) {
+        let read = t.split("\n").splice(1);
+        for (let rida of read) {
+          let m = rida.split(",");
+          if (m.length == 4) {
+            kohad[m[0]] = {
+              coords: [parseFloat(m[1]), parseFloat(m[2])],
+              type: m[3].trim()  // Eeldatakse, et 4. veerg näitab koha tüüpi
+            };
+          }
+        }
+      }
+      console.log("Kohad:", kohad);
+    }
+
+    function algus() {
+      kaart = L.map('kaardikiht').setView([59.439, 24.773], 8);
+      new L.TileLayer(
+        'https://tiles.maaamet.ee/tm/tms/1.0.0/hybriid@GMC/{z}/{x}/{y}.png&ASUTUS=TLU&ERIALA=DIGIHUMANITAARIA', {
+          attribution: "Map: <a href='http://www.maaamet.ee/'>Maa-amet</a>",
+          tms: true,
+        }).addTo(kaart);
+      abikiht = L.layerGroup().addTo(kaart);
+    }
+
+    function valiIkoon(koht) {
+      if (koht.type === "museum") {
+        return L.icon({
+          iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Museum_icon.svg/1024px-Museum_icon.svg.png',  // Asenda sobiva ikooniga
+          iconSize: [25, 41],
+          iconAnchor: [12, 41]
+        });
+      } else {
+        return L.icon({
+          iconUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Location_dot.svg/1024px-Location_dot.svg.png', // Kui on muu koht
+          iconSize: [25, 41],
+          iconAnchor: [12, 41]
+        });
+      }
+    }
+
+    function vajutus1() {
+      let sonad = vastus1.innerText.replace(",", "").replace(".", "").split(" ");
+      abikiht.clearLayers();
+      console.log("Sonad:", sonad);
+      for (let sona of sonad) {
+        let trimmedSona = sona.trim();
+        console.log("Kontrollin:", trimmedSona);
+        if (kohad[trimmedSona]) {
+          let koht = kohad[trimmedSona];
+          let marker = L.marker(koht.coords, { icon: valiIkoon(koht) }).addTo(abikiht).bindPopup(trimmedSona);
+          kaart.setView(koht.coords, 12); // 12 on zoomi tase
+        }
+      }
+    }
+
+    function loe(aadress) {
+      fetch(aadress).then(d => d.text()).then(kuvaTekst);
+    }
+
+    function kuvaTekst(t) {
+      vastus1.innerText = t;
+      vajutus1();
+    }
+  </script>
+</head>
+<body onload="lugemine1(); algus()">
+  <div id="kaardikiht" style="width: 800px; height: 400px"></div>
+  <input type="button" onclick="vajutus1()" value="Uuri" />
+  <input type="button" onclick="loe('uudis.txt')" value="uudis" />
+  <input type="button" onclick="loe('uudis2.txt')" value="uudis2" />
+  <div id="vastus1">Vastuse koht</div>
+</body>
+</html>
