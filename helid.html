@@ -1,0 +1,36 @@
+
+<!doctype html>
+<html>
+  <head>
+    <title>Joonis</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.11.1/lib/p5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/addons/p5.sound.min.js" ></script>
+<script>
+  function setup(){
+     laius=600;
+ oktave=3;
+ klahveoktavis=12
+     createCanvas(laius, 400);
+ background("aqua");
+     osc=new p5.Oscillator("sine");
+ line(200, 0, 200, 100);
+ line(400, 0, 400, 100);
+ klahvivahe=laius/(oktave*klahveoktavis);
+ for(nr=0; nr<oktave*klahveoktavis; nr++){
+    line(nr*klahvivahe, 10, nr*klahvivahe, 50);
+ }
+  }
+  function mousePressed(){
+      ellipse(mouseX, mouseY, 2,2);
+//   osc.freq(100+2*mouseX);
+           algkorgus=200;
+           sagedus=algkorgus*Math.pow(2, (mouseX/200));
+  osc.freq(sagedus);
+  osc.start();
+  }
+</script>
+  </head>
+  <body>
+     Joonise leht
+  </body>
+</html>
